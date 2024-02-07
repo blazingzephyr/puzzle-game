@@ -12,7 +12,7 @@
     ),
 
     "loading_font": File (
-        path: "menu/FiraSans-Bold.ttf",
+        path: "shared/FiraSans-Bold.ttf",
     ),
 
 })
