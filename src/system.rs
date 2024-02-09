@@ -14,8 +14,11 @@ pub enum GameState
     #[default]
     PreLoading,
     AssetLoading,
-    Menu,
-    InGame
+    MainMenu,
+    InGame,
+    GameOver,
+    LevelCompleted,
+    FullCompletion
 }
 
 pub fn cleanup_after_state(
