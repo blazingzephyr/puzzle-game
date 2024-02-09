@@ -1,6 +1,22 @@
 ({
-    "menu_background": TextureAtlas (
+    "menu_bg": TextureAtlas (
         path: "game/main_menu.png",
+        tile_size_x: 320.,
+        tile_size_y: 224.,
+        columns: 10,
+        rows: 3,
+    ),
+
+    "game_over_bg": TextureAtlas (
+        path: "game/lost_menu.png",
+        tile_size_x: 320.,
+        tile_size_y: 224.,
+        columns: 10,
+        rows: 3,
+    ),
+
+    "full_completion_bg": TextureAtlas (
+        path: "game/full_completion.png",
         tile_size_x: 320.,
         tile_size_y: 224.,
         columns: 10,
