@@ -1,8 +1,4 @@
 ({
-    "preload_background": Image (
-        path: "menu/menu_background.png"
-    ),
-
     "loading_icon": TextureAtlas (
         path: "menu/sonic_waiting_sheet.png",
         tile_size_x: 49.,
