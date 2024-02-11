@@ -21,7 +21,7 @@ use bevy::ecs::schedule::common_conditions::{resource_equals, resource_exists, r
 use bevy::ecs::schedule::{Condition, NextState, OnEnter, OnExit, OnTransition, State, SystemSet};
 use bevy::ecs::system::{Commands, Query, ResMut, RunSystemOnce};
 use bevy::ecs::world::World;
-use bevy::hierarchy::DespawnRecursiveExt;
+use bevy::hierarchy::{BuildChildren, DespawnRecursiveExt};
 use bevy::input::keyboard::KeyCode;
 use bevy::input::mouse::{MouseButton, MouseButtonInput};
 use bevy::input::Input;
@@ -34,13 +34,13 @@ use bevy::render::color::Color;
 use bevy::render::texture::{Image, ImagePlugin};
 use bevy::scene::{DynamicScene, DynamicSceneBundle, Scene, SceneBundle, SceneSpawner};
 use bevy::sprite::{Anchor, Sprite, SpriteBundle, SpriteSheetBundle, TextureAtlasBuilder, TextureAtlasSprite};
-use bevy::text::{Text, TextAlignment, TextStyle};
+use bevy::text::{self, Text, TextAlignment, TextStyle};
 use bevy::time::{Timer, TimerMode};
 use bevy::transform::components::Transform;
 use bevy::transform::TransformBundle;
-use bevy::ui::node_bundles::{ButtonBundle, TextBundle};
+use bevy::ui::node_bundles::{ButtonBundle, NodeBundle, TextBundle};
 use bevy::ui::widget::Button;
-use bevy::ui::{AlignItems, Interaction, JustifyContent, JustifySelf, PositionType, Style, UiRect, Val};
+use bevy::ui::{AlignItems, Display, GridPlacement, Interaction, JustifyContent, JustifySelf, PositionType, Style, UiRect, Val};
 use bevy::utils::hashbrown::Equivalent;
 use bevy::utils::HashMap;
 use bevy::window::{PrimaryWindow, Window, WindowPlugin, WindowResolution};
@@ -76,13 +76,13 @@ struct MenuAssets
 struct GameAssets
 {
     #[asset(key = "menu_bg")]
-    menu_bg: Handle<TextureAtlas>,
+    menu_bg: Handle<Image>,
 
     #[asset(key = "game_over_bg")]
-    game_over_bg: Handle<TextureAtlas>,
+    game_over_bg: Handle<Image>,
 
     #[asset(key = "full_completion_bg")]
-    full_completion_bg: Handle<TextureAtlas>,
+    full_completion_bg: Handle<Image>,
 
     #[asset(key = "main_font")]
     main_font: Handle<Font>,
@@ -101,8 +101,8 @@ fn main()
             .set(ImagePlugin::default_nearest())
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: String::from("Puzzle Game"),
-                    resolution: WindowResolution::new(960., 672.),
+                    title: String::from("Sonic's Eduquest '24"),
+                    resolution: WindowResolution::new(1280., 896.),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -228,18 +228,45 @@ fn setup_menu(
     game_assets: Res<GameAssets>)
 {
     let current_state = *game_state.get();
-    let sprite = TextureAtlasSprite
+    let sprite = Sprite
     {
         custom_size: Some(Vec2::new(320., 224.)),
         anchor: Anchor::Center,
         ..Default::default()
     };
 
+    let text_style = TextStyle {
+        font: game_assets.main_font.clone(),
+        font_size: 80.0,
+        color: Color::BLACK.into(),
+        ..Default::default()
+    };
+
+    let label_style = Style {
+        justify_self: JustifySelf::Center,
+        align_self: bevy::ui::AlignSelf::Center,
+        ..Default::default()
+    };
+
+    let button_bundle = ButtonBundle
+    {
+        style: Style {
+            width: Val::Px(500.0),
+            height: Val::Px(85.0),
+            margin: UiRect::axes(Val::Px(40.0), Val::Px(1.0)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..Default::default()
+        },
+        background_color: Color::rgb(0.977, 0.875, 0.584).into(),
+        ..Default::default()
+    };
+
     commands.spawn((
-        SpriteSheetBundle
+        SpriteBundle
         {
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            texture_atlas: match current_state
+            texture: match current_state
             {
                 GameState::GameOver => game_assets.game_over_bg.clone(),
                 GameState::FullCompletion => game_assets.full_completion_bg.clone(),
@@ -248,73 +275,95 @@ fn setup_menu(
             sprite: sprite.clone(),
             ..Default::default()
         },
-        AnimatableLayer
-        {
-            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
-            animations: vec![(0, 10)],
-            current_animation: 0,
-            next_animation: 0,
-            flip_x: false,
-            repeat: true
-        },
         current_state
     ));
 
-    commands.spawn((
-        TextBundle::from_section(
-            match current_state
+    commands
+        .spawn(
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+        .with_children(
+            |parent|
             {
-                GameState::GameOver => "Попробовать снова.",
-                GameState::FullCompletion => "Поздравляем",
-                _ => "Начать!"
-            },
-            TextStyle {
-                font: game_assets.main_font.clone(),
-                font_size: 100.0,
-                ..Default::default()
-            },
-        )
-        .with_text_alignment(TextAlignment::Center)
-        .with_style(Style {
-            justify_self: JustifySelf::Center,
-            align_self: bevy::ui::AlignSelf::Center,
-            ..Default::default()
-        }),
-        current_state
-    ));
-    
-    commands.spawn((
-        ButtonBundle {
-            style: Style {
-                width: Val::Px(250.0),
-                height: Val::Px(65.0),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..Default::default()
-            },
-            background_color: Color::rgb(0.85, 0.61, 0.38).into(),
-            ..Default::default()
-        },
-        MenuButtonAction::Play,
-        current_state
-    ));
-    
-    commands.spawn((
-        ButtonBundle {
-            style: Style {
-                width: Val::Px(100.0),
-                height: Val::Px(65.0),
-                top: Val::Percent(50.),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::End,
-                ..Default::default()
-            },
-            background_color: Color::rgb(1., 0.61, 0.38).into(),
-            ..Default::default()
-        },
-        if current_state == GameState::MainMenu { MenuButtonAction::Quit } else { MenuButtonAction::BackToMenu },
-        current_state
-    ));
+                if (current_state != GameState::FullCompletion)
+                {
+                    parent.spawn(
+                        (
+                            button_bundle.clone(),
+                            MenuButtonAction::Play,
+                            current_state
+                        )
+                    )
+                    .with_children(
+                        |parent|
+                        {
+                            parent.spawn((
+                                TextBundle::from_section(
+                                    match current_state
+                                    {
+                                        GameState::GameOver => "Ещё раз",
+                                        _ => "Начать"
+                                    },
+                                    text_style.clone(),
+                                )
+                                .with_text_alignment(TextAlignment::Center)
+                                .with_style(label_style.clone()),
+                                current_state
+                            ));
+                        }
+                    );
+                }
+
+                parent.spawn(
+                    (
+                        button_bundle.clone(),
+                        if current_state == GameState::MainMenu { MenuButtonAction::Quit } else { MenuButtonAction::BackToMenu },
+                        current_state
+                    )
+                )
+                .with_children(
+                    |parent|
+                    {
+                        parent.spawn((
+                            TextBundle::from_section(
+                                if current_state == GameState::MainMenu { "Выйти" } else { "Выход в меню" },
+                                text_style.clone())
+                                    .with_text_alignment(TextAlignment::Center)
+                                    .with_style(label_style.clone()),
+                            current_state
+                        ));
+                    }
+                );
+            }
+        );
+
+    if current_state == GameState::GameOver || current_state == GameState::FullCompletion
+    {
+        let mut top_style = text_style.clone();
+        top_style.color = Color::WHITE;
+
+        let mut top_label = label_style.clone();
+        top_label.top = Val::Percent(-15.);
+
+        commands.spawn((
+            TextBundle::from_section(
+                if current_state == GameState::GameOver { "Ты проиграл!" } else { "Ты прошёл игру!" },
+                top_style.clone(),
+            )
+            .with_text_alignment(TextAlignment::Center)
+            .with_style(top_label.clone()),
+            current_state
+        ));
+
+    }
 }
 
 fn spawn_player(
