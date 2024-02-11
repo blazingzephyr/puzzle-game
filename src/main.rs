@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 
 mod system;
 mod animations;
@@ -9,7 +10,7 @@ use std::string;
 
 use animations::{update_animation, AnimatableLayer};
 
-use bevy::app::{AppExit, PluginGroup, StateTransition, Update};
+use bevy::app::{AppExit, PluginGroup, Startup, StateTransition, Update};
 use bevy::asset::{AssetId, AssetServer, Assets, RecursiveDependencyLoadState};
 use bevy::core_pipeline::core_2d::Camera2dBundle;
 use bevy::ecs::bundle::Bundle;
@@ -19,7 +20,7 @@ use bevy::ecs::event::{EventReader, EventWriter};
 use bevy::ecs::query::{Changed, With, Without};
 use bevy::ecs::schedule::common_conditions::{resource_equals, resource_exists, run_once};
 use bevy::ecs::schedule::{Condition, NextState, OnEnter, OnExit, OnTransition, State, SystemSet};
-use bevy::ecs::system::{Commands, Query, ResMut, RunSystemOnce};
+use bevy::ecs::system::{Commands, NonSend, Query, ResMut, RunSystemOnce};
 use bevy::ecs::world::World;
 use bevy::hierarchy::{BuildChildren, DespawnRecursiveExt};
 use bevy::input::keyboard::KeyCode;
@@ -44,6 +45,7 @@ use bevy::ui::{AlignItems, Display, GridPlacement, Interaction, JustifyContent, 
 use bevy::utils::hashbrown::Equivalent;
 use bevy::utils::HashMap;
 use bevy::window::{PrimaryWindow, Window, WindowPlugin, WindowResolution};
+use bevy::winit::WinitWindows;
 use bevy::{app::App, asset::Handle, ecs::{schedule::{common_conditions::in_state, IntoSystemConfigs, States}, system::{Res, Resource}}, sprite::TextureAtlas, text::Font, DefaultPlugins};
 use bevy_asset_loader::{asset_collection::AssetCollection, loading_state::{config::ConfigureLoadingState, LoadingState, LoadingStateAppExt}, standard_dynamic_asset::StandardDynamicAssetCollection};
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
@@ -61,6 +63,7 @@ use leafwing_input_manager::plugin::InputManagerPlugin;
 use leafwing_input_manager::{Actionlike, InputManagerBundle};
 use player::{update_player_movement, Layer, Player, PlayerAction};
 use system::{cleanup_after_state, next_level, CurrentLevel, GameState, QuizClear};
+use winit::window::Icon;
 
 #[derive(AssetCollection, Resource)]
 struct MenuAssets
@@ -70,6 +73,9 @@ struct MenuAssets
 
     #[asset(key = "loading_font")]
     loading_font: Handle<Font>,
+
+    #[asset(key = "app_icon")]
+    app_icon: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -128,7 +134,7 @@ fn main()
                 .load_collection::<GameAssets>()
         )
         .add_systems(StateTransition, cleanup_after_state)
-        .add_systems(OnExit(GameState::PreLoading), (camera_setup, preload))
+        .add_systems(OnExit(GameState::PreLoading), (set_app_icon, camera_setup, preload))
         .add_systems(OnEnter(GameState::MainMenu), setup_menu)
         .add_systems(Update, update_animation)
         .add_systems(Update,
@@ -172,6 +178,22 @@ fn camera_setup(mut commands: Commands)
             ..Default::default()
         }
     );
+}
+
+fn set_app_icon(
+    menu_assets: Res<MenuAssets>,
+    images: Res<Assets<Image>>,
+    windows: NonSend<WinitWindows>,
+)
+{
+    if let Some(app_icon) = images.get(&menu_assets.app_icon)
+    {
+        let icon = Icon::from_rgba(app_icon.clone().data, app_icon.size().x, app_icon.size().y).unwrap();
+        for window in windows.windows.values()
+        {
+            window.set_window_icon(Some(icon.clone()));
+        }
+    }
 }
 
 fn preload(mut commands: Commands, menu_assets: Res<MenuAssets>)
