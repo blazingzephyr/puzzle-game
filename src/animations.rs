@@ -13,7 +13,8 @@ pub struct AnimatableLayer
     pub animations: Vec<(usize, usize)>,
     pub current_animation: usize,
     pub next_animation: usize,
-    pub flip_x: bool
+    pub flip_x: bool,
+    pub repeat: bool
 }
 
 pub fn update_animation(mut sprites: Query<(&mut TextureAtlasSprite, &mut AnimatableLayer)>, time: Res<Time>)
@@ -33,10 +34,12 @@ pub fn update_animation(mut sprites: Query<(&mut TextureAtlasSprite, &mut Animat
             }
             else
             {
-                sprites.index += 1;
-
                 let indices = animatable.animations[animatable.current_animation];
-                if sprites.index >= indices.1
+                if sprites.index < indices.1
+                {
+                    sprites.index += 1;
+                }
+                else if animatable.repeat
                 {
                     sprites.index = indices.0;
                 }

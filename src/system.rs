@@ -1,11 +1,14 @@
 
 use bevy::ecs::component::Component;
 use bevy::ecs::entity::Entity;
+use bevy::ecs::schedule::NextState;
 use bevy::ecs::schedule::State;
 use bevy::ecs::schedule::States;
 use bevy::ecs::system::Commands;
 use bevy::ecs::system::Query;
 use bevy::ecs::system::Res;
+use bevy::ecs::system::ResMut;
+use bevy::ecs::system::Resource;
 use bevy::hierarchy::DespawnRecursiveExt;
 
 #[derive(Debug, Component, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -21,6 +24,12 @@ pub enum GameState
     FullCompletion
 }
 
+#[derive(Resource, PartialEq)]
+pub struct CurrentLevel(pub u8);
+
+#[derive(Resource, PartialEq)]
+pub struct QuizClear(pub bool);
+
 pub fn cleanup_after_state(
     mut commands: Commands,
     game_state: Res<State<GameState>>,
@@ -34,4 +43,11 @@ pub fn cleanup_after_state(
             commands.entity(entity).despawn_recursive();
         }
     }
+}
+
+pub fn next_level(
+    game_stats: Res<CurrentLevel>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+) {
+    next_game_state.set(if game_stats.0 < 6 { GameState::InGame } else { GameState::FullCompletion });
 }
