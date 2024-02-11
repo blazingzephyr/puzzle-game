@@ -1,26 +1,17 @@
 ({
-    "menu_bg": TextureAtlas (
+    "menu_bg": Image (
         path: "game/main_menu.png",
-        tile_size_x: 320.,
-        tile_size_y: 224.,
-        columns: 10,
-        rows: 3,
+        sampler: Nearest
     ),
 
-    "game_over_bg": TextureAtlas (
+    "game_over_bg": Image (
         path: "game/lost_menu.png",
-        tile_size_x: 320.,
-        tile_size_y: 224.,
-        columns: 10,
-        rows: 3,
+        sampler: Nearest
     ),
 
-    "full_completion_bg": TextureAtlas (
+    "full_completion_bg": Image (
         path: "game/full_completion.png",
-        tile_size_x: 320.,
-        tile_size_y: 224.,
-        columns: 10,
-        rows: 3,
+        sampler: Nearest
     ),
 
     "sonic": TextureAtlas (
