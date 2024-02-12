@@ -4,12 +4,14 @@ mod system;
 mod animations;
 mod player;
 mod interactable;
+mod assets;
 
 use std::borrow::Borrow;
 use std::string;
 
 use animations::{update_animation, AnimatableLayer};
 
+use assets::{GameAssets, MenuAssets};
 use bevy::app::{AppExit, PluginGroup, Startup, StateTransition, Update};
 use bevy::asset::{AssetId, AssetServer, Assets, RecursiveDependencyLoadState};
 use bevy::core_pipeline::core_2d::Camera2dBundle;
@@ -56,7 +58,7 @@ use bevy_xpbd_2d::plugins::spatial_query::{ShapeCaster, ShapeHits, SpatialQueryF
 use bevy_xpbd_2d::plugins::{PhysicsDebugPlugin, PhysicsPlugins};
 use bevy_xpbd_2d::prelude::PhysicsLayer;
 use bevy_xpbd_2d::resources::Gravity;
-use interactable::{clear_quiz_buttons, interact_with_gobject, interact_with_menu_button, interact_with_quiz_button, make_uninteractable, update_player_interaction, GroundObject, Interactivity, MenuButtonAction, QuizButton, QuizButtonData};
+use interactable::{clear_quiz_buttons, interact_with_gobject, interact_with_menu_button, interact_with_quiz_button, make_uninteractable, update_player_interaction, GroundObject, Interactivity, MenuButtonAction, QuestionData, QuizButton, QuizButtonData};
 use leafwing_input_manager::action_state::ActionState;
 use leafwing_input_manager::input_map::InputMap;
 use leafwing_input_manager::plugin::InputManagerPlugin;
@@ -64,38 +66,6 @@ use leafwing_input_manager::{Actionlike, InputManagerBundle};
 use player::{update_player_movement, Layer, Player, PlayerAction};
 use system::{cleanup_after_state, next_level, CurrentLevel, GameState, QuizClear};
 use winit::window::Icon;
-
-#[derive(AssetCollection, Resource)]
-struct MenuAssets
-{    
-    #[asset(key = "loading_icon")]
-    loading_icon: Handle<TextureAtlas>,
-
-    #[asset(key = "loading_font")]
-    loading_font: Handle<Font>,
-
-    #[asset(key = "app_icon")]
-    app_icon: Handle<Image>,
-}
-
-#[derive(AssetCollection, Resource)]
-struct GameAssets
-{
-    #[asset(key = "menu_bg")]
-    menu_bg: Handle<Image>,
-
-    #[asset(key = "game_over_bg")]
-    game_over_bg: Handle<Image>,
-
-    #[asset(key = "full_completion_bg")]
-    full_completion_bg: Handle<Image>,
-
-    #[asset(key = "main_font")]
-    main_font: Handle<Font>,
-
-    #[asset(key = "sonic")]
-    sonic: Handle<TextureAtlas>,
-}
 
 fn main()
 {
@@ -148,9 +118,11 @@ fn main()
         .add_systems(OnEnter(GameState::InGame), spawn_player)
         .add_systems(OnEnter(GameState::InGame), level_1.run_if(
             resource_exists::<CurrentLevel>().and_then(resource_equals(CurrentLevel(1)))))
+            .add_systems(OnEnter(GameState::InGame), level_2.run_if(
+                resource_exists::<CurrentLevel>().and_then(resource_equals(CurrentLevel(2)))))
         .add_systems(OnEnter(GameState::GameOver), setup_menu)
         .add_systems(OnEnter(GameState::FullCompletion), setup_menu)
-        .add_systems(Update, (make_uninteractable, clear_quiz_buttons).chain().run_if(resource_equals(QuizClear(true))))
+        .add_systems(Update, (make_uninteractable, clear_quiz_buttons).chain().run_if(resource_exists::<QuizClear>()))
         .add_systems(Update,
             (update_player_interaction,
                 update_player_movement,
@@ -377,7 +349,7 @@ fn setup_menu(
 
         commands.spawn((
             TextBundle::from_section(
-                if current_state == GameState::GameOver { "Ты проиграл!" } else { "Ты прошёл игру!" },
+                if current_state == GameState::GameOver { "Соник, ты что творишь?!" } else { "Ты победил, Соник!" },
                 top_style.clone(),
             )
             .with_text_alignment(TextAlignment::Center)
@@ -390,7 +362,8 @@ fn setup_menu(
 
 fn spawn_player(
     mut commands: Commands,
-    image_assets: Res<GameAssets>
+    image_assets: Res<GameAssets>,
+    current_level: Res<CurrentLevel>
 ) {
     let query_filter = SpatialQueryFilter::new()
         .with_masks([Layer::Ground]);
@@ -398,6 +371,10 @@ fn spawn_player(
     commands.spawn((
         SpriteSheetBundle
         {
+            transform: Transform::from_xyz(
+                if current_level.0 == 1 { 0. } else { -75. },
+                if current_level.0 == 1 { 0. } else { 100. },
+                1.),
             texture_atlas: image_assets.sonic.clone(),
             sprite: TextureAtlasSprite::default(),
             ..Default::default()
@@ -455,12 +432,24 @@ fn level_1(
     mut commands: Commands,
     image_assets: Res<GameAssets>
 ) {
+    // Background
+    commands.spawn((
+        SpriteBundle
+        {
+            texture: image_assets.level1.clone(),
+            transform: Transform::from_xyz(0., 0., -1.),
+            ..Default::default()
+        },
+        GameState::InGame
+    ));
+
+    // Ground
     commands.spawn((
         SpriteSheetBundle
         {
             texture_atlas: image_assets.sonic.clone(),
             sprite: TextureAtlasSprite::default(),
-            transform: Transform::from_xyz(0., -25., 0.),
+            transform: Transform::from_xyz(-70., -25., 0.),
             ..Default::default()
         },
         AnimatableLayer
@@ -473,17 +462,18 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(100., 10.1),
+        Collider::cuboid(150., 10.1),
         GameState::InGame,
         CollisionLayers::new([Layer::Ground], [Layer::Player, Layer::Enemy])
     ));
 
+    // Ground 2
     commands.spawn((
         SpriteSheetBundle
         {
             texture_atlas: image_assets.sonic.clone(),
             sprite: TextureAtlasSprite::default(),
-            transform: Transform::from_xyz(80., -25., 0.),
+            transform: Transform::from_xyz(-40., 30., 0.),
             ..Default::default()
         },
         AnimatableLayer
@@ -496,19 +486,18 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(10.1, 10.1),
-        CollisionLayers::new([Layer::Enemy], [Layer::Player]),
+        Collider::cuboid(90., 10.1),
         GameState::InGame,
-        GroundObject { next_game_state: GameState::LevelCompleted }
+        CollisionLayers::new([Layer::Ground], [Layer::Player, Layer::Enemy])
     ));
 
-    //spike
+    // Ground 3
     commands.spawn((
         SpriteSheetBundle
         {
             texture_atlas: image_assets.sonic.clone(),
             sprite: TextureAtlasSprite::default(),
-            transform: Transform::from_xyz(100., -25., 0.),
+            transform: Transform::from_xyz(-95., 20., 0.),
             ..Default::default()
         },
         AnimatableLayer
@@ -521,34 +510,98 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(10.1, 10.1),
+        Collider::cuboid(20., 10.1),
+        GameState::InGame,
+        CollisionLayers::new([Layer::Ground], [Layer::Player, Layer::Enemy])
+    ));
+
+    // Uninteractable wall 1
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(-150., 145., 0.),
+            ..Default::default()
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 350.),
+        CollisionLayers::new([Layer::Ground], [Layer::Player]),
+        GameState::InGame
+    ));
+
+    // Spike 0
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(-75., 45., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 15.),
         CollisionLayers::new([Layer::Enemy], [Layer::Player]),
         GameState::InGame,
         GroundObject { next_game_state: GameState::GameOver }
     ));
 
-    //wall
+    // Wall
     let wall = commands.spawn((
         SpriteSheetBundle
         {
             texture_atlas: image_assets.sonic.clone(),
             sprite: TextureAtlasSprite::default(),
-            transform: Transform::from_xyz(-20., 0., 0.),
+            transform: Transform::from_xyz(-10., 75., 0.),
             ..Default::default()
         },
         RigidBody::Static,
-        Collider::cuboid(10.1, 10.1),
+        Collider::cuboid(10.1, 75.),
         CollisionLayers::new([Layer::Ground], [Layer::Player]),
         GameState::InGame
     )).id();
 
-    //interactivity
+    // Spikes 1
     commands.spawn((
         SpriteSheetBundle
         {
             texture_atlas: image_assets.sonic.clone(),
             sprite: TextureAtlasSprite::default(),
-            transform: Transform::from_xyz(20., 0., 0.),
+            transform: Transform::from_xyz(40., -30., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(60., 20.1),
+        CollisionLayers::new([Layer::Enemy], [Layer::Player]),
+        GameState::InGame,
+        GroundObject { next_game_state: GameState::GameOver }
+    ));
+
+    // Interactivity
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(-35., 50., 0.),
             ..Default::default()
         },
         AnimatableLayer
@@ -569,22 +622,369 @@ fn level_1(
         InputManagerBundle::<PlayerAction>
         {
             action_state: ActionState::default(),
-            input_map: InputMap::new(
-                [
-                    (KeyCode::B, PlayerAction::Interact)
-                ]
-            ),
+            input_map: InputMap::new([ (KeyCode::B, PlayerAction::Interact) ]),
         },
         Interactivity
         {
             can_interact: true,
             is_interacting: false,
+            question: QuestionData
+            {
+                text: "XD".into(),
+                x: 850.,
+                y: 50.,
+            },
+            entity: Some(wall.clone()),
             buttons: [
-                QuizButtonData { x: 200., y: 50., /*text: "A".into(),*/ is_correct: false, entity: None },
-                QuizButtonData { x: 500., y: 50., /*text: "B".into(),*/ is_correct: false, entity: None },
-                QuizButtonData { x: 200., y: 150., /*text: "C".into(),*/ is_correct: true, entity: Some(wall.clone()) },
-                QuizButtonData { x: 500., y: 150., /*text: "D".into(),*/ is_correct: false, entity: None },
+                QuizButtonData { x: 700., y: 150., text: "Ответ A".into(), is_correct: false },
+                QuizButtonData { x: 1000., y: 150., text: "Ответ B".into(), is_correct: false },
+                QuizButtonData { x: 700., y: 250., text: "Ответ C".into(), is_correct: true },
+                QuizButtonData { x: 1000., y: 250., text: "Ответ D".into(), is_correct: false },
             ]
         }
+    ));
+
+    // Wall
+    let wall = commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(100., -25., 0.),
+            ..Default::default()
+        },
+        RigidBody::Static,
+        Collider::cuboid(50.1, 10.),
+        CollisionLayers::new([Layer::Ground], [Layer::Player]),
+        GameState::InGame
+    )).id();
+
+    // Uninteractable wall 2
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(130., 0., 0.),
+            ..Default::default()
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 500.),
+        CollisionLayers::new([Layer::Ground], [Layer::Player]),
+        GameState::InGame
+    ));
+
+    // Interactivity 2
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(100., -10., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 10.1),
+        CollisionLayers::new([Layer::Interactable], [Layer::Player]),
+        Sensor,
+        GameState::InGame,
+
+        InputManagerBundle::<PlayerAction>
+        {
+            action_state: ActionState::default(),
+            input_map: InputMap::new([ (KeyCode::B, PlayerAction::Interact) ]),
+        },
+        Interactivity
+        {
+            can_interact: true,
+            is_interacting: false,
+            question: QuestionData
+            {
+                text: "XD".into(),
+                x: 850.,
+                y: 50.,
+            },
+            entity: Some(wall.clone()),
+            buttons: [
+                QuizButtonData { x: 700., y: 150., text: "Ответ A".into(), is_correct: false },
+                QuizButtonData { x: 1000., y: 150., text: "Ответ B".into(), is_correct: false },
+                QuizButtonData { x: 700., y: 250., text: "Ответ C".into(), is_correct: true },
+                QuizButtonData { x: 1000., y: 250., text: "Ответ D".into(), is_correct: false },
+            ]
+        }
+    ));
+
+    // Spikes 2
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(100., -100., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(50., 10.1),
+        CollisionLayers::new([Layer::Enemy], [Layer::Player]),
+        GameState::InGame,
+        GroundObject { next_game_state: GameState::GameOver }
+    ));
+
+    // Spikes 3
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(100., -100., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(50., 10.1),
+        CollisionLayers::new([Layer::Enemy], [Layer::Player]),
+        GameState::InGame,
+        GroundObject { next_game_state: GameState::GameOver }
+    ));
+
+    // Level Goal
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(65., -100., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 10.1),
+        CollisionLayers::new([Layer::Enemy], [Layer::Player]),
+        GameState::InGame,
+        GroundObject { next_game_state: GameState::LevelCompleted }
+    ));
+}
+
+fn level_2(
+    mut commands: Commands,
+    image_assets: Res<GameAssets>
+) {
+    // Background
+    commands.spawn((
+        SpriteBundle
+        {
+            texture: image_assets.level2.clone(),
+            transform: Transform::from_xyz(0., 0., -1.),
+            ..Default::default()
+        },
+        GameState::InGame
+    ));
+
+    // Uninteractable wall 1
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            visibility: bevy::render::view::Visibility::Hidden,
+            transform: Transform::from_xyz(-150., 0., 0.),
+            ..Default::default()
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 500.),
+        CollisionLayers::new([Layer::Ground], [Layer::Player]),
+        GameState::InGame
+    ));
+
+    // Uninteractable wall 2
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            visibility: bevy::render::view::Visibility::Hidden,
+            transform: Transform::from_xyz(130., 0., 0.),
+            ..Default::default()
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 500.),
+        CollisionLayers::new([Layer::Ground], [Layer::Player]),
+        GameState::InGame
+    ));
+
+    let sets: [(f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32,
+        String, String, String, String, String, bool, bool, bool, bool); 4] = 
+    [
+        (-100., 70., 90., 10.1, 50., 70., 150., 10.1, -40., 70., 25.1, 10., 0., 85., 10.1, 10.1, 
+            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+        ),
+        
+        (-70., 15., 150., 10.1, 85., 15., 80., 10.1, 25., 15., 35.1, 10., 100., 30., 10.1, 10.1, 
+            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+        ),
+        
+        (-85., -40., 120., 10.1, 65., -40., 120., 10.1, -10., -40., 30., 10., -10., -25., 10.1, 10.1,
+            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+        ),
+        
+        (-50., -95., 180., 10.1, 100., -95., 50., 10.1, 57.5, -95., 35., 10., /* */ -45., -80., 10.1, 10.1,
+            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+        )
+    ];
+
+    for (g_x1, g_y1, g_cx1, g_cy1,
+        g_x2, g_y2, g_cx2, g_cy2,
+        w_x, w_y, w_cx, w_cy,
+        i_x, i_y, i_cx, i_cy,
+        question, a1, a2, a3, a4,
+        c1, c2, c3, c4
+    ) in sets.iter()
+    {
+        // Ground #1
+        commands.spawn((
+            SpriteSheetBundle
+            {
+                visibility: bevy::render::view::Visibility::Hidden,
+                transform: Transform::from_xyz(*g_x1, *g_y1, 0.),
+                ..Default::default()
+            },
+            RigidBody::Static,
+            Collider::cuboid(*g_cx1, *g_cy1),
+            GameState::InGame,
+            CollisionLayers::new([Layer::Ground], [Layer::Player, Layer::Enemy])
+        ));
+
+        // Ground #2
+        commands.spawn((
+            SpriteSheetBundle
+            {
+                visibility: bevy::render::view::Visibility::Hidden,
+                transform: Transform::from_xyz(*g_x2, *g_y2, 0.),
+                ..Default::default()
+            },
+            RigidBody::Static,
+            Collider::cuboid(*g_cx2, *g_cy2),
+            GameState::InGame,
+            CollisionLayers::new([Layer::Ground], [Layer::Player, Layer::Enemy])
+        ));
+
+        // Wall 1
+        let wall = commands.spawn((
+            SpriteSheetBundle
+            {
+                texture_atlas: image_assets.sonic.clone(),
+                sprite: TextureAtlasSprite::default(),
+                transform: Transform::from_xyz(*w_x, *w_y, 0.),
+                ..Default::default()
+            },
+            RigidBody::Static,
+            Collider::cuboid(*w_cx, *w_cy),
+            CollisionLayers::new([Layer::Ground], [Layer::Player]),
+            GameState::InGame
+        )).id();
+
+        // Interactivity 1
+        commands.spawn((
+            SpriteSheetBundle
+            {
+                texture_atlas: image_assets.sonic.clone(),
+                sprite: TextureAtlasSprite::default(),
+                transform: Transform::from_xyz(*i_x, *i_y, 0.),
+                ..Default::default()
+            },
+            AnimatableLayer
+            {
+                timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+                animations: vec![(0, 10)],
+                current_animation: 0,
+                next_animation: 0,
+                flip_x: false,
+                repeat: true
+            },
+            RigidBody::Static,
+            Collider::cuboid(*i_cx, *i_cy),
+            CollisionLayers::new([Layer::Interactable], [Layer::Player]),
+            Sensor,
+            GameState::InGame,
+
+            InputManagerBundle::<PlayerAction>
+            {
+                action_state: ActionState::default(),
+                input_map: InputMap::new([ (KeyCode::B, PlayerAction::Interact) ]),
+            },
+            Interactivity
+            {
+                can_interact: true,
+                is_interacting: false,
+                question: QuestionData
+                {
+                    text: question.into(),
+                    x: 850.,
+                    y: 50.,
+                },
+                entity: Some(wall.clone()),
+                buttons: [
+                    QuizButtonData { x: 700., y: 150., text: a1.into(), is_correct: c1.clone() },
+                    QuizButtonData { x: 1000., y: 150., text: a2.into(), is_correct: c2.clone() },
+                    QuizButtonData { x: 700., y: 250., text: a3.into(), is_correct: c3.clone() },
+                    QuizButtonData { x: 1000., y: 250., text: a4.into(), is_correct: c4.clone() },
+                ]
+            }
+        ));
+    }
+
+    // Level Goal
+    commands.spawn((
+        SpriteSheetBundle
+        {
+            texture_atlas: image_assets.sonic.clone(),
+            sprite: TextureAtlasSprite::default(),
+            transform: Transform::from_xyz(60., -105., 0.),
+            ..Default::default()
+        },
+        AnimatableLayer
+        {
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+            animations: vec![(0, 10)],
+            current_animation: 0,
+            next_animation: 0,
+            flip_x: false,
+            repeat: true
+        },
+        RigidBody::Static,
+        Collider::cuboid(10.1, 10.1),
+        CollisionLayers::new([Layer::Enemy], [Layer::Player]),
+        GameState::InGame,
+        GroundObject { next_game_state: GameState::LevelCompleted }
     ));
 }

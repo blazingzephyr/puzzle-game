@@ -49,5 +49,5 @@ pub fn next_level(
     game_stats: Res<CurrentLevel>,
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
-    next_game_state.set(if game_stats.0 < 2 { GameState::InGame } else { GameState::FullCompletion });
+    next_game_state.set(if game_stats.0 < 3 { GameState::InGame } else { GameState::FullCompletion });
 }

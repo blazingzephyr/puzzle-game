@@ -51,7 +51,7 @@ pub fn update_player_movement(
                 let mut gonna_jump = false;
                 if action_state.just_pressed(PlayerAction::Jump) && !ground_hits.is_empty()
                 {
-                    linear_velocity.y += 60.0;
+                    linear_velocity.y += 100.0;
                     gonna_jump = true;
 
                     if let Some(ref mut anim) = animatable
