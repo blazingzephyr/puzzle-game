@@ -14,5 +14,5 @@
     "app_icon": Image (
         path: "menu/app_icon.png",
         sampler: Nearest
-    ),    
+    ),
 })

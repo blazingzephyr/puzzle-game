@@ -21,8 +21,18 @@
         columns: 10,
         rows: 8,
     ),
+    
+    "level1": Image (
+        path: "game/level1.png",
+        sampler: Nearest
+    ),  
+
+    "level2": Image (
+        path: "game/level2.png",
+        sampler: Nearest
+    ),  
 
     "main_font": File (
         path: "shared/FiraSans-Bold.ttf",
-    )
+    ),  
 })
