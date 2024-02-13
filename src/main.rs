@@ -85,7 +85,7 @@ fn main()
             }))
         .add_plugins(PixelCameraPlugin)
         .add_plugins(InputManagerPlugin::<PlayerAction>::default())
-        .add_plugins((PhysicsPlugins::default(), PhysicsDebugPlugin::default()))
+        .add_plugins(PhysicsPlugins::default())
             .insert_resource(Gravity(Vec2::NEG_Y * 100.0))
             .insert_resource(PhysicsDebugConfig {
                 aabb_color: Some(Color::WHITE),
@@ -447,19 +447,9 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(-70., -25., 0.),
             ..Default::default()
-        },
-        AnimatableLayer
-        {
-            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
-            animations: vec![(0, 10)],
-            current_animation: 0,
-            next_animation: 0,
-            flip_x: false,
-            repeat: true
         },
         RigidBody::Static,
         Collider::cuboid(150., 10.1),
@@ -471,19 +461,9 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(-40., 30., 0.),
             ..Default::default()
-        },
-        AnimatableLayer
-        {
-            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
-            animations: vec![(0, 10)],
-            current_animation: 0,
-            next_animation: 0,
-            flip_x: false,
-            repeat: true
         },
         RigidBody::Static,
         Collider::cuboid(90., 10.1),
@@ -495,19 +475,9 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(-95., 20., 0.),
             ..Default::default()
-        },
-        AnimatableLayer
-        {
-            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
-            animations: vec![(0, 10)],
-            current_animation: 0,
-            next_animation: 0,
-            flip_x: false,
-            repeat: true
         },
         RigidBody::Static,
         Collider::cuboid(20., 10.1),
@@ -519,8 +489,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(-150., 145., 0.),
             ..Default::default()
         },
@@ -534,8 +503,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(-75., 45., 0.),
             ..Default::default()
         },
@@ -549,7 +517,7 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(10.1, 15.),
+        Collider::cuboid(15.1, 15.),
         CollisionLayers::new([Layer::Enemy], [Layer::Player]),
         GameState::InGame,
         GroundObject { next_game_state: GameState::GameOver }
@@ -557,10 +525,10 @@ fn level_1(
 
     // Wall
     let wall = commands.spawn((
-        SpriteSheetBundle
+        SpriteBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            texture: image_assets.gate0.clone(),
+            sprite: Sprite::default(),
             transform: Transform::from_xyz(-10., 75., 0.),
             ..Default::default()
         },
@@ -574,8 +542,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(40., -30., 0.),
             ..Default::default()
         },
@@ -589,7 +556,7 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(60., 20.1),
+        Collider::cuboid(55., 15.),
         CollisionLayers::new([Layer::Enemy], [Layer::Player]),
         GameState::InGame,
         GroundObject { next_game_state: GameState::GameOver }
@@ -599,8 +566,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(-35., 50., 0.),
             ..Default::default()
         },
@@ -630,26 +596,26 @@ fn level_1(
             is_interacting: false,
             question: QuestionData
             {
-                text: "XD".into(),
+                text: "Геометрический смысл производной функции".into(),
                 x: 850.,
                 y: 50.,
             },
             entity: Some(wall.clone()),
             buttons: [
-                QuizButtonData { x: 700., y: 150., text: "Ответ A".into(), is_correct: false },
-                QuizButtonData { x: 1000., y: 150., text: "Ответ B".into(), is_correct: false },
-                QuizButtonData { x: 700., y: 250., text: "Ответ C".into(), is_correct: true },
-                QuizButtonData { x: 1000., y: 250., text: "Ответ D".into(), is_correct: false },
+                QuizButtonData { x: 700., y: 150., text: "Тангенс угла касательной".into(), is_correct: false },
+                QuizButtonData { x: 1000., y: 150., text: "Скорость изменения процесса".into(), is_correct: true },
+                QuizButtonData { x: 700., y: 250., text: "Ускорение процесса".into(), is_correct: false },
+                QuizButtonData { x: 1000., y: 250., text: "Дискриминант".into(), is_correct: false },
             ]
         }
     ));
 
     // Wall
     let wall = commands.spawn((
-        SpriteSheetBundle
+        SpriteBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            texture: image_assets.gate1.clone(),
+            sprite: Sprite::default(),
             transform: Transform::from_xyz(100., -25., 0.),
             ..Default::default()
         },
@@ -663,8 +629,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(130., 0., 0.),
             ..Default::default()
         },
@@ -678,8 +643,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(100., -10., 0.),
             ..Default::default()
         },
@@ -709,16 +673,16 @@ fn level_1(
             is_interacting: false,
             question: QuestionData
             {
-                text: "XD".into(),
+                text: "Временные рамки Великой российской революции".into(),
                 x: 850.,
                 y: 50.,
             },
             entity: Some(wall.clone()),
             buttons: [
-                QuizButtonData { x: 700., y: 150., text: "Ответ A".into(), is_correct: false },
-                QuizButtonData { x: 1000., y: 150., text: "Ответ B".into(), is_correct: false },
-                QuizButtonData { x: 700., y: 250., text: "Ответ C".into(), is_correct: true },
-                QuizButtonData { x: 1000., y: 250., text: "Ответ D".into(), is_correct: false },
+                QuizButtonData { x: 700., y: 150., text: "1905–1907".into(), is_correct: false },
+                QuizButtonData { x: 700., y: 250., text: "1941–1945".into(), is_correct: false },
+                QuizButtonData { x: 1000., y: 150., text: "1917–1922".into(), is_correct: true },
+                QuizButtonData { x: 1000., y: 250., text: "1812–1815".into(), is_correct: false },
             ]
         }
     ));
@@ -727,8 +691,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(100., -100., 0.),
             ..Default::default()
         },
@@ -742,7 +705,7 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(50., 10.1),
+        Collider::cuboid(45., 10.1),
         CollisionLayers::new([Layer::Enemy], [Layer::Player]),
         GameState::InGame,
         GroundObject { next_game_state: GameState::GameOver }
@@ -752,9 +715,8 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
-            transform: Transform::from_xyz(100., -100., 0.),
+            visibility: bevy::render::view::Visibility::Hidden,
+            transform: Transform::from_xyz(105., -100., 0.),
             ..Default::default()
         },
         AnimatableLayer
@@ -767,7 +729,7 @@ fn level_1(
             repeat: true
         },
         RigidBody::Static,
-        Collider::cuboid(50., 10.1),
+        Collider::cuboid(40., 10.1),
         CollisionLayers::new([Layer::Enemy], [Layer::Player]),
         GameState::InGame,
         GroundObject { next_game_state: GameState::GameOver }
@@ -777,8 +739,7 @@ fn level_1(
     commands.spawn((
         SpriteSheetBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(65., -100., 0.),
             ..Default::default()
         },
@@ -843,22 +804,22 @@ fn level_2(
     ));
 
     let sets: [(f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32,
-        String, String, String, String, String, bool, bool, bool, bool); 4] = 
+        String, String, String, String, String, bool, bool, bool, bool, Handle<Image>); 4] = 
     [
         (-100., 70., 90., 10.1, 50., 70., 150., 10.1, -40., 70., 25.1, 10., 0., 85., 10.1, 10.1, 
-            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+            "Как звали Раскольникова?".into(), "Родион".into(), "Ростислав".into(), "Ратибор".into(), "Руслан".into(), true, false, false, false, image_assets.gate2.clone()
         ),
         
         (-70., 15., 150., 10.1, 85., 15., 80., 10.1, 25., 15., 35.1, 10., 100., 30., 10.1, 10.1, 
-            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+            "Что не является хим. процессом?".into(), "Гидролиз".into(), "Преломление".into(), "Пиролиз".into(), "Галогенирование".into(), false, true, false, false, image_assets.gate3.clone()
         ),
         
-        (-85., -40., 120., 10.1, 65., -40., 120., 10.1, -10., -40., 30., 10., -10., -25., 10.1, 10.1,
-            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+        (-85., -40., 120., 10.1, 65., -40., 120., 10.1, -10., -40., 30., 10., -60., -25., 10.1, 10.1,
+            "Какая столица не распологается в Азии?".into(), "Пекин".into(), "Скопье".into(), "Бангкок".into(), "Дакка".into(), false, true, false, false, image_assets.gate4.clone()
         ),
         
-        (-50., -95., 180., 10.1, 100., -95., 50., 10.1, 57.5, -95., 35., 10., /* */ -45., -80., 10.1, 10.1,
-            "XD".into(), "A".into(), "B".into(), "C".into(), "D".into(), false, false, true, false
+        (-50., -95., 180., 10.1, 100., -95., 50., 10.1, 57.5, -95., 35., 10., -45., -80., 10.1, 10.1,
+            "Другое название низшей точки депрессии?".into(), "Минимум".into(), "Предел".into(), "Пик".into(), "Дно".into(), false, false, false, true, image_assets.gate5.clone()
         )
     ];
 
@@ -867,12 +828,12 @@ fn level_2(
         w_x, w_y, w_cx, w_cy,
         i_x, i_y, i_cx, i_cy,
         question, a1, a2, a3, a4,
-        c1, c2, c3, c4
+        c1, c2, c3, c4, gate
     ) in sets.iter()
     {
         // Ground #1
         commands.spawn((
-            SpriteSheetBundle
+            SpriteBundle
             {
                 visibility: bevy::render::view::Visibility::Hidden,
                 transform: Transform::from_xyz(*g_x1, *g_y1, 0.),
@@ -886,7 +847,7 @@ fn level_2(
 
         // Ground #2
         commands.spawn((
-            SpriteSheetBundle
+            SpriteBundle
             {
                 visibility: bevy::render::view::Visibility::Hidden,
                 transform: Transform::from_xyz(*g_x2, *g_y2, 0.),
@@ -900,10 +861,10 @@ fn level_2(
 
         // Wall 1
         let wall = commands.spawn((
-            SpriteSheetBundle
+            SpriteBundle
             {
-                texture_atlas: image_assets.sonic.clone(),
-                sprite: TextureAtlasSprite::default(),
+                sprite: Sprite::default(),
+                texture: gate.clone(),
                 transform: Transform::from_xyz(*w_x, *w_y, 0.),
                 ..Default::default()
             },
@@ -915,10 +876,9 @@ fn level_2(
 
         // Interactivity 1
         commands.spawn((
-            SpriteSheetBundle
+            SpriteBundle
             {
-                texture_atlas: image_assets.sonic.clone(),
-                sprite: TextureAtlasSprite::default(),
+                visibility: bevy::render::view::Visibility::Hidden,
                 transform: Transform::from_xyz(*i_x, *i_y, 0.),
                 ..Default::default()
             },
@@ -965,10 +925,9 @@ fn level_2(
 
     // Level Goal
     commands.spawn((
-        SpriteSheetBundle
+        SpriteBundle
         {
-            texture_atlas: image_assets.sonic.clone(),
-            sprite: TextureAtlasSprite::default(),
+            visibility: bevy::render::view::Visibility::Hidden,
             transform: Transform::from_xyz(60., -105., 0.),
             ..Default::default()
         },

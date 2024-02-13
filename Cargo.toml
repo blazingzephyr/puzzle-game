@@ -18,3 +18,7 @@ opt-level = 1
 # Enable high optimizations for dependencies (e.g. Bevy)
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.release]
+lto = "thin"
+opt-level = 1

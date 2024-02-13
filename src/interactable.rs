@@ -161,8 +161,8 @@ pub fn update_player_interaction(
 
                 let text_style = TextStyle {
                     font: game_assets.main_font.clone(),
-                    font_size: 50.0,
-                    color: Color::rgb(0.5, 0.5, 0.5)
+                    font_size: 25.0,
+                    color: Color::BLACK
                 };
 
                 let label_style = Style {
@@ -170,6 +170,8 @@ pub fn update_player_interaction(
                     align_self: bevy::ui::AlignSelf::Center,
                     ..Default::default()
                 };
+
+                let color = Color::rgb(0.85, 0.61, 0.38);
 
                 commands.spawn(
                     (
@@ -183,10 +185,11 @@ pub fn update_player_interaction(
                                 position_type: PositionType::Absolute,
                                 ..Default::default()
                             },
-                            background_color: Color::rgba(0.85, 0.61, 0.38, 0.).into(),
+                            background_color: color.clone().into(),
                             ..Default::default()
                         },
-                        QuizLabel
+                        QuizLabel,
+                        GameState::InGame
                     ))
                 .with_children(
                     |parent|
@@ -195,7 +198,7 @@ pub fn update_player_interaction(
                             TextBundle::from_section(interactivity.question.text.deref(), text_style.clone())
                                 .with_text_alignment(TextAlignment::Center)
                                 .with_style(label_style.clone()),
-                            GameState::InGame
+                            GameState::InGame,
                         ));
                     }
                 );
@@ -213,7 +216,7 @@ pub fn update_player_interaction(
                                 position_type: PositionType::Absolute,
                                 ..Default::default()
                             },
-                            background_color: Color::rgb(0.85, 0.61, 0.38).into(),
+                            background_color: color.clone().into(),
                             ..Default::default()
                         },
                         QuizButton {
@@ -266,6 +269,7 @@ pub fn interact_with_quiz_button(
             else
             {
                 game_state.set(GameState::GameOver);
+                commands.insert_resource(QuizClear(false));
             }
         }
     }

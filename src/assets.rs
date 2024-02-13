@@ -42,4 +42,22 @@ pub struct GameAssets
 
     #[asset(key = "level2")]
     pub level2: Handle<Image>,
+
+    #[asset(key = "gate_0")]
+    pub gate0: Handle<Image>,
+
+    #[asset(key = "gate_1")]
+    pub gate1: Handle<Image>,
+    
+    #[asset(key = "gate_2")]
+    pub gate2: Handle<Image>,
+
+    #[asset(key = "gate_3")]
+    pub gate3: Handle<Image>,
+
+    #[asset(key = "gate_4")]
+    pub gate4: Handle<Image>,
+
+    #[asset(key = "gate_5")]
+    pub gate5: Handle<Image>,
 }
