@@ -13,12 +13,22 @@ winit = "0.28"
 
 # Enable low optimizations in debug mode 
 [profile.dev]
-opt-level = 1
+debug = 0
+strip = "debuginfo"
+opt-level = 0
 
 # Enable high optimizations for dependencies (e.g. Bevy)
 [profile.dev.package."*"]
 opt-level = 3
 
 [profile.release]
+opt-level = 3
+panic = 'abort'
+debug = 0
+strip = "debuginfo"
+
+[profile.distribution]
+inherits = "release"
+strip = true
 lto = "thin"
-opt-level = 1
+codegen-units = 1

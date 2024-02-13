@@ -30,9 +30,16 @@
     "level2": Image (
         path: "game/level2.png",
         sampler: Nearest
-    ),  
+    ),
 
     "main_font": File (
         path: "shared/FiraSans-Bold.ttf",
-    ),  
+    ),
+
+    "gate_0": Image ( path: "game/gate_0.png", sampler: Nearest),
+    "gate_1": Image (path: "game/gate_1.png", sampler: Nearest),
+    "gate_2": Image (path: "game/gate_2.png", sampler: Nearest),
+    "gate_3": Image (path: "game/gate_3.png", sampler: Nearest),
+    "gate_4": Image (path: "game/gate_4.png", sampler: Nearest),
+    "gate_5": Image (path: "game/gate_5.png", sampler: Nearest),
 })
